@@ -4,5 +4,8 @@
   "private": true,
   "devDependencies": {
     "shadow-cljs": "2.28.21"
+  },
+  "dependencies": {
+    "compostjs": "^0.0.5"
   }
 }
