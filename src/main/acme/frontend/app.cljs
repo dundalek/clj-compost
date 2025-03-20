@@ -2,10 +2,11 @@
   (:require
    ["compostjs" :refer [compost] :rename {compost c}]
    ["compostjs/dist/core" :refer [Scales$$$calculateScales Compost$$$defstyle Compost$$$createSvg Drawing$$$drawShape Drawing$002EDrawingContext Svg$$$renderSvg Svg$002ERenderingContext Svg$$$formatPath]]
-   ["compostjs/dist/fable-library.2.10.1/Types" :refer [Union]]
+   ["compostjs/dist/fable-library.2.10.1/Types" :refer [Union List]]
    [acme.compost :as cj]
    [clojure.string :as str]
-   [hiccups.runtime :as hr]))
+   [hiccups.runtime :as hr]
+   [acme.compost.core-new :as cc]))
 
 (defn union? [x]
   (instance? Union x))
@@ -14,13 +15,16 @@
 (defn union->clj [x]
   (cond
     (union? x) (with-meta
-                 [(keyword "acme.compost" (.-name x))
-                  (mapv union->clj (.-fields x))]
-                 {::cj/original x})
+                 (into
+                  [(keyword "acme.compost.core-new" (.-name x))]
+                  (map union->clj)
+                  (.-fields x))
+                 {::cc/original x})
+    (instance? List x) (map union->clj x)
     (array? x) (.map x union->clj)
     #_(with-meta
         (mapv union->clj x)
-        {::cj/original x})
+        {::cc/original x})
     :else x))
 
 (defn element->hiccup [el]
@@ -37,63 +41,36 @@
                 (into {}))]
           (map element->hiccup children))))
 
-(defn draw-shape [ctx x1 y1 x2 y2 sx sy shape]
-
-  (assert (union? shape))
-
-  ;; project
-
-  #_(case (.-name shape)
-      "ScaledLine" (let [[line] (.-fields shape)
-                         p #js []
-                         style "cursor:default;font:10pt sans-serif;stroke-opacity:1.000000; stroke-width:2px; stroke:rgb(256, 0, 0); fill-opacity:0.000000; fill:rgb(0, 0, 0)"]
-                     #js {:name "Path"
-                          :fields []}))
-
-  (Drawing$$$drawShape ctx x1 y1 x2 y2 sx sy shape))
-
-(defn svg-format-path [path]
-  ; (Svg$$$formatPath path))
-  (->> path
-       (map (fn [[tag fields]]
-              (case tag
-                ::cj/MoveTo (let [[x y] fields]
-                              (str "M" x " " y " "))
-                ::cj/LineTo (let [[x y] fields]
-                              (str "L" x " " y " ")))))
-       (str/join "")))
-
-(defn render-svg [ctx svg]
-  #_(->> (Svg$$$renderSvg ctx svg)
-         (map element->hiccup))
-  (assert (union? svg))
-
-  #_(case (.-name svg)
-      "Path" (let [[p style] (.-fields svg)]
-               [[:path {:d (svg-format-path p)
-                        :style style}]]))
-
-  (let [[tag fields] (union->clj svg)]
-    (case tag
-      ::cj/Path (let [[p style] fields]
-                  [[:path {:d (svg-format-path p)
-                           :style style}]]))))
-
 (defn create-svg [rev-x rev-y width height viz]
+  (js/console.log "viz" viz)
+  (js/console.log "viz-clj" (union->clj viz))
   #_(element->hiccup (Compost$$$createSvg rev-x rev-y width height viz))
   (let [;; calculateScales
-        [[sx sy] shape] (Scales$$$calculateScales Compost$$$defstyle viz)
-        _ (js/console.log "shape" shape)
-        _ (js/console.log "shape" (pr-str (union->clj shape)))
+        [[sx sy] shape-fs] (Scales$$$calculateScales Compost$$$defstyle viz)
+        _ (js/console.log "shape-fs" shape-fs)
+        _ (js/console.log "shape-fs-clj" (union->clj shape-fs))
+        _ (js/console.log "sx-fs-clj" (union->clj sx))
+        [[sx-clj sy-clj] shape-clj] (cc/calculate-scales {} (union->clj viz))
+        _ (js/console.log "shape-clj" shape-clj)
+        _ (js/console.log "sx-clj" sx-clj)
         ;; drawShape
         defs #js []
         draw-ctx (Drawing$002EDrawingContext. Compost$$$defstyle defs)
-        svg (draw-shape draw-ctx 0 0 width height sx sy shape)
-        _ (js/console.log "svg" svg)
-        _ (js/console.log "svg" (pr-str (union->clj svg)))
+        svg-fs (Drawing$$$drawShape draw-ctx 0 0 width height sx sy shape-fs)
+        _ (js/console.log "svg-fs" svg-fs)
+        _ (js/console.log "svg-fs-clj" (union->clj svg-fs))
+        ;; it seems definitions are used for animations and gradients definitions
+        defs-clj (atom [])
+        draw-ctx-clj {::cc/definitions defs-clj ::cc/style cc/defstyle}
+        ; svg-clj (cc/draw-shape draw-ctx-clj 0 0 width height (union->clj sx) (union->clj sy) (union->clj shape-fs))
+        svg-clj (cc/draw-shape draw-ctx-clj 0 0 width height sx-clj sy-clj shape-clj)
+        _ (js/console.log "svg-clj" svg-clj)
         ;; renderSvg
         render-ctx (Svg$002ERenderingContext. defs)
-        body (render-svg render-ctx svg)]
+        ; (->> (Svg$$$renderSvg ctx svg
+        ;       (map element->hiccup)))
+        body (cc/render-svg render-ctx svg-clj)]
+        ; body (cc/render-svg render-ctx (union->clj svg-fs))]
     (into [:svg {:style "overflow:visible"
                  :width width
                  :height height}]
@@ -128,3 +105,4 @@
   (let [d (cj/line [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]])]
     #_(cj/render "demo" d)
     (render "demo" d)))
+    ; (println "svgx" (cc/create-svg 600 300 (union->clj d)))))
