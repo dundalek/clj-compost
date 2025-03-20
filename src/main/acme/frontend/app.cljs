@@ -17,9 +17,10 @@
                  [(keyword "acme.compost" (.-name x))
                   (mapv union->clj (.-fields x))]
                  {::cj/original x})
-    (array? x) (with-meta
-                 (mapv union->clj x)
-                 {::cj/original x})
+    (array? x) (.map x union->clj)
+    #_(with-meta
+        (mapv union->clj x)
+        {::cj/original x})
     :else x))
 
 (defn element->hiccup [el]
@@ -54,13 +55,12 @@
 (defn svg-format-path [path]
   ; (Svg$$$formatPath path))
   (->> path
-       (map (fn [ps]
-              (assert (union? ps))
-              (case (.-name ps)
-                "MoveTo" (let [[x y] (.-fields ps)]
-                           (str "M" x " " y " "))
-                "LineTo" (let [[x y] (.-fields ps)]
-                           (str "L" x " " y " ")))))
+       (map (fn [[tag fields]]
+              (case tag
+                ::cj/MoveTo (let [[x y] fields]
+                              (str "M" x " " y " "))
+                ::cj/LineTo (let [[x y] fields]
+                              (str "L" x " " y " ")))))
        (str/join "")))
 
 (defn render-svg [ctx svg]
@@ -73,10 +73,10 @@
                [[:path {:d (svg-format-path p)
                         :style style}]]))
 
-  (let [[tag args] (union->clj svg)]
+  (let [[tag fields] (union->clj svg)]
     (case tag
-      ::cj/Path (let [[p style] args]
-                  [[:path {:d (svg-format-path (::cj/original (meta p)))
+      ::cj/Path (let [[p style] fields]
+                  [[:path {:d (svg-format-path p)
                            :style style}]]))))
 
 (defn create-svg [rev-x rev-y width height viz]
