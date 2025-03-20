@@ -3,7 +3,8 @@
    ["compostjs" :refer [compost] :rename {compost c}]
    ["compostjs/dist/core" :refer [Scales$$$calculateScales Compost$$$defstyle Compost$$$createSvg]]
    ["compostjs/dist/fable-library.2.10.1/Types" :refer [Union]]
-   [acme.compost :as cj]))
+   [acme.compost :as cj]
+   [hiccups.runtime :as hr]))
 
 (defn union? [x]
   (instance? Union x))
@@ -21,6 +22,11 @@
                           [(keyword k) (first (.-fields v))])))
                 (into {}))]
           (map element->hiccup children))))
+
+(defn render [id viz]
+  (let [svg (Compost$$$createSvg false false 600 300 viz)
+        el (js/document.getElementById id)]
+    (set! (.-innerHTML el) (hr/render-html (element->hiccup svg)))))
 
 (defn ^:export ^:dev/after-load init []
   #_(let [d (.axes c "left bottom"
@@ -44,10 +50,8 @@
       (cj/render "demo" d))
 
   (let [d (cj/line [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]])]
-    (cj/render "demo" d)
-
-    (let [svg (Compost$$$createSvg false false 600 300 d)]
-      (prn (element->hiccup svg)))
+    #_(cj/render "demo" d)
+    (render "root" d)
 
     #_(let [[[sx sy] shape] (Scales$$$calculateScales Compost$$$defstyle d)]
         (js/console.log "shape" shape))))
