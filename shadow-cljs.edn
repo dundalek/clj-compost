@@ -5,11 +5,13 @@
   "src/test"]
 
  :dependencies
- [[hiccups/hiccups "0.3.0"]]
+ [[hiccups/hiccups "0.3.0"]
+  [binaryage/devtools "1.0.7"]]
 
  :dev-http {8080 "public"}
 
  :builds
  {:frontend
   {:target :browser
-   :modules {:main {:init-fn acme.frontend.app/init}}}}}
+   :modules {:main {:init-fn acme.frontend.app/init}}
+   :devtools {:preloads [devtools.preload]}}}}
