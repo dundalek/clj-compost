@@ -9,6 +9,18 @@
 
 (defn union? [x]
   (instance? Union x))
+  ; (instance? js/Object x))
+
+(defn union->clj [x]
+  (cond
+    (union? x) (with-meta
+                 [(keyword "acme.compost" (.-name x))
+                  (mapv union->clj (.-fields x))]
+                 {::cj/original x})
+    (array? x) (with-meta
+                 (mapv union->clj x)
+                 {::cj/original x})
+    :else x))
 
 (defn element->hiccup [el]
   (assert (union? el))
@@ -23,6 +35,21 @@
                           [(keyword k) (first (.-fields v))])))
                 (into {}))]
           (map element->hiccup children))))
+
+(defn draw-shape [ctx x1 y1 x2 y2 sx sy shape]
+
+  (assert (union? shape))
+
+  ;; project
+
+  #_(case (.-name shape)
+      "ScaledLine" (let [[line] (.-fields shape)
+                         p #js []
+                         style "cursor:default;font:10pt sans-serif;stroke-opacity:1.000000; stroke-width:2px; stroke:rgb(256, 0, 0); fill-opacity:0.000000; fill:rgb(0, 0, 0)"]
+                     #js {:name "Path"
+                          :fields []}))
+
+  (Drawing$$$drawShape ctx x1 y1 x2 y2 sx sy shape))
 
 (defn svg-format-path [path]
   ; (Svg$$$formatPath path))
@@ -40,20 +67,30 @@
   #_(->> (Svg$$$renderSvg ctx svg)
          (map element->hiccup))
   (assert (union? svg))
-  (case (.-name svg)
-    "Path" (let [[p style] (.-fields svg)]
-             [[:path {:d (svg-format-path p)
-                      :style style}]])))
+
+  #_(case (.-name svg)
+      "Path" (let [[p style] (.-fields svg)]
+               [[:path {:d (svg-format-path p)
+                        :style style}]]))
+
+  (let [[tag args] (union->clj svg)]
+    (case tag
+      ::cj/Path (let [[p style] args]
+                  [[:path {:d (svg-format-path (::cj/original (meta p)))
+                           :style style}]]))))
 
 (defn create-svg [rev-x rev-y width height viz]
   #_(element->hiccup (Compost$$$createSvg rev-x rev-y width height viz))
   (let [;; calculateScales
         [[sx sy] shape] (Scales$$$calculateScales Compost$$$defstyle viz)
+        _ (js/console.log "shape" shape)
+        _ (js/console.log "shape" (pr-str (union->clj shape)))
         ;; drawShape
         defs #js []
         draw-ctx (Drawing$002EDrawingContext. Compost$$$defstyle defs)
-        svg (Drawing$$$drawShape draw-ctx 0 0 width height sx sy shape)
-        ; _ (js/console.log "svg" svg)
+        svg (draw-shape draw-ctx 0 0 width height sx sy shape)
+        _ (js/console.log "svg" svg)
+        _ (js/console.log "svg" (pr-str (union->clj svg)))
         ;; renderSvg
         render-ctx (Svg$002ERenderingContext. defs)
         body (render-svg render-ctx svg)]
