@@ -1,9 +1,8 @@
 (ns acme.frontend.app
   (:require
-   ["compostjs" :refer [compost] :rename {compost c}]
    ["compostjs/dist/core" :refer [Scales$$$calculateScales Compost$$$defstyle Compost$$$createSvg Drawing$$$drawShape Drawing$002EDrawingContext Svg$$$renderSvg Svg$002ERenderingContext Svg$$$formatPath]]
    ["compostjs/dist/fable-library.2.10.1/Types" :refer [Union List]]
-   [acme.compost :as cj]
+   [acme.compost :as c]
    [clojure.string :as str]
    [hiccups.runtime :as hr]
    [acme.compost.core-new :as cc]))
@@ -81,6 +80,9 @@
         el (js/document.getElementById id)]
     (set! (.-innerHTML el) (hr/render-html svg))))
 
+(def examples
+  [["out1a" (c/column "Positive" 39)]])
+
 (defn ^:export ^:dev/after-load init []
   #_(let [d (.axes c "left bottom"
                    (.line c (clj->js [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]])))]
@@ -98,11 +100,18 @@
                                      (cj/fill-color "#1F77B4" (cj/column "Neutral" 17))]))]
       (cj/render "demo" demo))
 
-  #_(let [d (cj/axes "left bottom"
-                     (cj/line [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]]))]
+  #_(let [d (c/axes "left bottom"
+                    (c/line [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]]))]
       (cj/render "demo" d))
 
-  (let [d (cj/line [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]])]
-    #_(cj/render "demo" d)
-    (render "demo" d)))
-    ; (println "svgx" (cc/create-svg 600 300 (union->clj d)))))
+  #_(let [d (c/line [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]])]
+      (render "demo" d))
+
+  (set! (.-innerHTML (js/document.getElementById "demo"))
+        (->> examples
+             (map (fn [[label viz]]
+                    (hr/render-html
+                     [:div
+                      [:h2 label]
+                      (create-svg false false 500 200 viz)])))
+             (str/join "\n"))))
