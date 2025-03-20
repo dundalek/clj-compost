@@ -9,7 +9,9 @@
 
 (defn union? [x]
   (instance? Union x))
-  ; (instance? js/Object x))
+
+(defn iterator? [x]
+  (and (object? x) (fn? (aget x js/Symbol.iterator))))
 
 (defn union->clj [x]
   (cond
@@ -19,11 +21,16 @@
                   (map union->clj)
                   (.-fields x))
                  {::cc/original x})
+
     (instance? List x) (map union->clj x)
+
+    (iterator? x) (map union->clj x)
+
     (array? x) (.map x union->clj)
     #_(with-meta
         (mapv union->clj x)
         {::cc/original x})
+
     :else x))
 
 (defn element->hiccup [el]
@@ -107,6 +114,8 @@
   #_(let [d (c/line [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]])]
       (render "demo" d))
 
+  ; (js/console.log "clj" (union->clj (c/column "Positive" 39)))
+
   (set! (.-innerHTML (js/document.getElementById "demo"))
         (->> examples
              (map (fn [[label viz]]
@@ -115,3 +124,4 @@
                       [:h2 label]
                       (create-svg false false 500 200 viz)])))
              (str/join "\n"))))
+
