@@ -4,6 +4,7 @@
    ["compostjs/dist/core" :refer [Scales$$$calculateScales Compost$$$defstyle Compost$$$createSvg Drawing$$$drawShape Drawing$002EDrawingContext Svg$$$renderSvg Svg$002ERenderingContext Svg$$$formatPath]]
    ["compostjs/dist/fable-library.2.10.1/Types" :refer [Union]]
    [acme.compost :as cj]
+   [clojure.string :as str]
    [hiccups.runtime :as hr]))
 
 (defn union? [x]
@@ -23,13 +24,25 @@
                 (into {}))]
           (map element->hiccup children))))
 
+(defn svg-format-path [path]
+  ; (Svg$$$formatPath path))
+  (->> path
+       (map (fn [ps]
+              (assert (union? ps))
+              (case (.-name ps)
+                "MoveTo" (let [[x y] (.-fields ps)]
+                           (str "M" x " " y " "))
+                "LineTo" (let [[x y] (.-fields ps)]
+                           (str "L" x " " y " ")))))
+       (str/join "")))
+
 (defn render-svg [ctx svg]
   #_(->> (Svg$$$renderSvg ctx svg)
          (map element->hiccup))
   (assert (union? svg))
   (case (.-name svg)
     "Path" (let [[p style] (.-fields svg)]
-             [[:path {:d (Svg$$$formatPath p)
+             [[:path {:d (svg-format-path p)
                       :style style}]])))
 
 (defn create-svg [rev-x rev-y width height viz]
