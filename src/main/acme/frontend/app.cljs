@@ -1,7 +1,7 @@
 (ns acme.frontend.app
   (:require
    ["compostjs" :refer [compost] :rename {compost c}]
-   ["compostjs/dist/core" :refer [Scales$$$calculateScales Compost$$$defstyle Compost$$$createSvg Drawing$$$drawShape Drawing$002EDrawingContext Svg$$$renderSvg Svg$002ERenderingContext]]
+   ["compostjs/dist/core" :refer [Scales$$$calculateScales Compost$$$defstyle Compost$$$createSvg Drawing$$$drawShape Drawing$002EDrawingContext Svg$$$renderSvg Svg$002ERenderingContext Svg$$$formatPath]]
    ["compostjs/dist/fable-library.2.10.1/Types" :refer [Union]]
    [acme.compost :as cj]
    [hiccups.runtime :as hr]))
@@ -23,6 +23,15 @@
                 (into {}))]
           (map element->hiccup children))))
 
+(defn render-svg [ctx svg]
+  #_(->> (Svg$$$renderSvg ctx svg)
+         (map element->hiccup))
+  (assert (union? svg))
+  (case (.-name svg)
+    "Path" (let [[p style] (.-fields svg)]
+             [[:path {:d (Svg$$$formatPath p)
+                      :style style}]])))
+
 (defn create-svg [rev-x rev-y width height viz]
   #_(element->hiccup (Compost$$$createSvg rev-x rev-y width height viz))
   (let [;; calculateScales
@@ -31,13 +40,14 @@
         defs #js []
         draw-ctx (Drawing$002EDrawingContext. Compost$$$defstyle defs)
         svg (Drawing$$$drawShape draw-ctx 0 0 width height sx sy shape)
+        ; _ (js/console.log "svg" svg)
         ;; renderSvg
         render-ctx (Svg$002ERenderingContext. defs)
-        body (Svg$$$renderSvg render-ctx svg)]
+        body (render-svg render-ctx svg)]
     (into [:svg {:style "overflow:visible"
                  :width width
                  :height height}]
-          (map element->hiccup body))))
+          body)))
 
 (defn render [id viz]
   (let [svg (create-svg false false 600 300 viz)
