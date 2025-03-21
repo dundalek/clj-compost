@@ -1,11 +1,15 @@
 (ns acme.frontend.app
   (:require
-   ["compostjs/dist/core" :refer [Scales$$$calculateScales Compost$$$defstyle Compost$$$createSvg Drawing$$$drawShape Drawing$002EDrawingContext Svg$$$renderSvg Svg$002ERenderingContext Svg$$$formatPath]]
-   ["compostjs/dist/fable-library.2.10.1/Types" :refer [Union List]]
+   ["compostjs/dist/core" :refer [Compost$$$defstyle Drawing$$$drawShape
+                                  Drawing$002EDrawingContext
+                                  Scales$$$calculateScales
+                                  Svg$002ERenderingContext]]
+   ["compostjs/dist/fable-library.2.10.1/Types" :refer [List Union]]
    [acme.compost :as c]
+   [acme.compost.core-new :as cc]
    [clojure.string :as str]
-   [hiccups.runtime :as hr]
-   [acme.compost.core-new :as cc]))
+   [clojure.walk :as walk]
+   [hiccups.runtime :as hr]))
 
 (defn union? [x]
   (instance? Union x))
@@ -47,16 +51,40 @@
                 (into {}))]
           (map element->hiccup children))))
 
+(defn from-hiccup [kw->constructor viz]
+  (walk/postwalk (fn [x]
+                   (if-not (and (vector? x) (keyword? (first x)))
+                     x
+                     (let [[viz-kw & args] x]
+                       (apply (get kw->constructor viz-kw) args))))
+                 viz))
+
+(defn from-hiccup-fs [viz]
+  (from-hiccup c/kw->constructor viz))
+
+(def kw->constructor-clj
+  (merge c/kw->constructor
+         {:fill-color cc/fill-color
+          :overlay (fn [sh] [::cc/Layered sh])}))
+
+(defn from-hiccup-clj [viz]
+  (->>
+   (from-hiccup kw->constructor-clj viz)
+   (walk/prewalk union->clj)))
+
 (defn create-svg [rev-x rev-y width height viz]
   (js/console.log "viz" viz)
-  (js/console.log "viz-clj" (union->clj viz))
   #_(element->hiccup (Compost$$$createSvg rev-x rev-y width height viz))
-  (let [;; calculateScales
-        [[sx sy] shape-fs] (Scales$$$calculateScales Compost$$$defstyle viz)
+  (let [viz-fs (from-hiccup-fs viz)
+        viz-clj (from-hiccup-clj viz)
+        _ (js/console.log "viz-fs" viz-fs)
+        _ (js/console.log "viz-clj" viz-clj)
+        ;; calculateScales
+        [[sx sy] shape-fs] (Scales$$$calculateScales Compost$$$defstyle viz-fs)
         _ (js/console.log "shape-fs" shape-fs)
         _ (js/console.log "shape-fs-clj" (union->clj shape-fs))
         _ (js/console.log "sx-fs-clj" (union->clj sx))
-        [[sx-clj sy-clj] shape-clj] (cc/calculate-scales {} (union->clj viz))
+        [[sx-clj sy-clj] shape-clj] (cc/calculate-scales {} viz-clj)
         _ (js/console.log "shape-clj" shape-clj)
         _ (js/console.log "sx-clj" sx-clj)
         ;; drawShape
@@ -89,14 +117,19 @@
 
 (def examples
   [["line"
-    (c/line [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]])]
+    [:line [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]]]]
    ["out1a"
-    (c/column "Positive" 39)]
+    [:column "Positive" 39]]
    ["out1b"
-    (c/overlay
-     [(c/column "Positive" 39)
-      (c/column "Negative" 43)
-      (c/column "Neutral" 17)])]])
+    [:overlay
+     [[:column "Positive" 39]
+      [:column "Negative" 43]
+      [:column "Neutral" 17]]]]
+   ["out2a"
+    [:overlay
+     [[:fill-color "#2CA02C" [:column "Positive" 39]]
+      [:fill-color "#D62728" [:column "Negative" 43]]
+      [:fill-color "#1F77B4" [:column "Neutral" 17]]]]]])
 
 (defn ^:export ^:dev/after-load init []
   #_(let [d (.axes c "left bottom"
@@ -133,6 +166,7 @@
         (->>
          examples
          ; [(last examples)]
+         reverse
          (map (fn [[label viz]]
                 (hr/render-html
                  [:div

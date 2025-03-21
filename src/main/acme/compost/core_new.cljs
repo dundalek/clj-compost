@@ -73,8 +73,14 @@
     [(calculate-shape-scale xs) (calculate-shape-scale ys)]))
 
 (defn calculate-scales [style shape]
-  (let [calculate-scales (partial calculate-scales style)]
+  (let [calculate-scales-style calculate-scales
+        calculate-scales (partial calculate-scales style)]
     (case (first shape)
+      ::Style
+      (let [[_ f shape] shape
+            [scales shape] (calculate-scales-style (f style) shape)]
+        [scales [::cc/ScaledStyle f shape]])
+
       ::Line
       (let [[_ line] shape]
         [(calculate-shape-scales line) [::cc/ScaledLine line]])
@@ -167,6 +173,10 @@
       (let [[_ shapes] shape]
         [::cc/Combine (map #(draw-shape ctx x1 y1 x2 y2 sx sy %) shapes)])
 
+      ::cc/ScaledStyle
+      (let [[_ f shape] shape]
+        (draw-shape (update ctx ::cc/style f) x1 y1 x2 y2 sx sy shape))
+
       ::cc/ScaledLine
       (let [[_ line] shape
             path (into [[::cc/MoveTo (project (first line))]]
@@ -191,6 +201,9 @@
 ;; ------------------------------------------------------------------------------------------------
 ;; Derived
 ;; ------------------------------------------------------------------------------------------------
+
+(defn fill-color [clr s]
+  [::Style (fn [style] (assoc style ::cc/fill [::cc/Solid [1.0 [::cc/HTML clr]]])) s])
 
 ;; ------------------------------------------------------------------------------------------------
 ;; integration

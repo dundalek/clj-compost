@@ -31,3 +31,28 @@
 (defn html [& args] (.apply (.-html compost) compost (clj->js args)))
 (defn interactive [& args] (.apply (.-interactive compost) compost (clj->js args)))
 (defn render [& args] (.apply (.-render compost) compost (clj->js args)))
+
+(def kw->constructor
+  {:scaleX scaleX
+   :scaleY scaleY
+   :scale scale
+   :nestX nestX
+   :nestY nestY
+   :nest nest
+   :overlay overlay
+   :padding padding
+   :fill-color fill-color
+   :stroke-color stroke-color
+   :font font
+   :column column
+   :bar bar
+   :bubble bubble
+   :text text
+   :shape shape
+   :line line
+   :axes axes
+   :on on
+   :svg svg
+   :html html
+   :interactive interactive})
+   ; :render render})
