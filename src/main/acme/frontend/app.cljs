@@ -3,53 +3,33 @@
    ["compostjs/dist/core" :refer [Compost$$$defstyle Drawing$$$drawShape
                                   Drawing$002EDrawingContext
                                   Scales$$$calculateScales
-                                  Svg$002ERenderingContext]]
+                                  Svg$002ERenderingContext
+                                  Svg$$$renderSvg]]
    ["compostjs/dist/fable-library.2.10.1/Types" :refer [List Union]]
    [acme.compost :as c]
-   [acme.compost.core-new :as cc]
+   [acme.compost.core-new :as cc :refer [union? union->clj]]
    [clojure.string :as str]
    [clojure.walk :as walk]
    [hiccups.runtime :as hr]))
 
-(defn union? [x]
-  (instance? Union x))
-
-(defn iterator? [x]
-  (and (object? x) (fn? (aget x js/Symbol.iterator))))
-
-(defn union->clj [x]
-  (cond
-    (union? x) (with-meta
-                 (into
-                  [(keyword "acme.compost.core-new" (.-name x))]
-                  (map union->clj)
-                  (.-fields x))
-                 {::cc/original x})
-
-    (instance? List x) (map union->clj x)
-
-    (iterator? x) (map union->clj x)
-
-    (array? x) (.map x union->clj)
-    #_(with-meta
-        (mapv union->clj x)
-        {::cc/original x})
-
-    :else x))
-
 (defn element->hiccup [el]
   (assert (union? el))
-  (assert (= (.-name el) "Element"))
-  (let [[namespace tag attrs children] (.-fields el)]
-    (into [(keyword tag)
-           (->> attrs
-                (keep (fn [[k v]]
-                        ;; selecting only Attributes, ignoring other types like Event for now
-                        (when (and (union? v)
-                                   (= (.-name v) "Attribute"))
-                          [(keyword k) (first (.-fields v))])))
-                (into {}))]
-          (map element->hiccup children))))
+  (case (.-name el)
+    "Element"
+    (let [[namespace tag attrs children] (.-fields el)]
+      (into [(keyword tag)
+             (->> attrs
+                  (keep (fn [[k v]]
+                         ;; selecting only Attributes, ignoring other types like Event for now
+                          (when (and (union? v)
+                                     (= (.-name v) "Attribute"))
+                            [(keyword k) (first (.-fields v))])))
+                  (into {}))]
+            (map element->hiccup children)))
+
+    "Text"
+    (let [[text] (.-fields el)]
+      text)))
 
 (defn from-hiccup [kw->constructor viz]
   (walk/postwalk (fn [x]
@@ -65,7 +45,11 @@
 (def kw->constructor-clj
   (merge c/kw->constructor
          {:fill-color cc/fill-color
-          :overlay (fn [sh] [::cc/Layered sh])}))
+          :overlay (fn [sh] [::cc/Layered sh])
+          :axes (fn [a s]
+                  [::cc/Axes
+                   (str/includes? a "top") (str/includes? a "right") (str/includes? a "bottom") (str/includes? a "left")
+                   s])}))
 
 (defn from-hiccup-clj [viz]
   (->>
@@ -74,37 +58,38 @@
 
 (defn create-svg [rev-x rev-y width height viz]
   (js/console.log "viz" viz)
-  #_(element->hiccup (Compost$$$createSvg rev-x rev-y width height viz))
   (let [viz-fs (from-hiccup-fs viz)
-        viz-clj (from-hiccup-clj viz)
         _ (js/console.log "viz-fs" viz-fs)
-        _ (js/console.log "viz-clj" viz-clj)
-        ;; calculateScales
         [[sx sy] shape-fs] (Scales$$$calculateScales Compost$$$defstyle viz-fs)
         _ (js/console.log "shape-fs" shape-fs)
         _ (js/console.log "shape-fs-clj" (union->clj shape-fs))
-        _ (js/console.log "sx-fs-clj" (union->clj sx))
-        [[sx-clj sy-clj] shape-clj] (cc/calculate-scales {} viz-clj)
-        _ (js/console.log "shape-clj" shape-clj)
-        _ (js/console.log "sx-clj" sx-clj)
-        ;; drawShape
         defs #js []
         draw-ctx (Drawing$002EDrawingContext. Compost$$$defstyle defs)
         svg-fs (Drawing$$$drawShape draw-ctx 0 0 width height sx sy shape-fs)
+        render-ctx (Svg$002ERenderingContext. defs)
         _ (js/console.log "svg-fs" svg-fs)
         _ (js/console.log "svg-fs-clj" (union->clj svg-fs))
-        ;; it seems definitions are used for animations and gradients definitions
+        body (->> (Svg$$$renderSvg render-ctx svg-fs)
+                  (map element->hiccup))
+        ;; ===
+
+        sx-clj (union->clj sx)
+        sy-clj (union->clj sy)
+        shape-clj (union->clj shape-fs)
+        svg-clj (union->clj svg-fs)
+        viz-clj (from-hiccup-clj viz)
         defs-clj (atom [])
         draw-ctx-clj {::cc/definitions defs-clj ::cc/style cc/defstyle}
-        ; svg-clj (cc/draw-shape draw-ctx-clj 0 0 width height (union->clj sx) (union->clj sy) (union->clj shape-fs))
+        render-ctx-clj {}
+
+        ;; ===
+
+        [[sx-clj sy-clj] shape-clj] (cc/calculate-scales cc/defstyle viz-clj)
         svg-clj (cc/draw-shape draw-ctx-clj 0 0 width height sx-clj sy-clj shape-clj)
+
         _ (js/console.log "svg-clj" svg-clj)
-        ;; renderSvg
-        render-ctx (Svg$002ERenderingContext. defs)
-        ; (->> (Svg$$$renderSvg ctx svg
-        ;       (map element->hiccup)))
-        body (cc/render-svg render-ctx svg-clj)]
-        ; body (cc/render-svg render-ctx (union->clj svg-fs))]
+
+        body (cc/render-svg render-ctx-clj svg-clj)]
     (into [:svg {:style "overflow:visible"
                  :width width
                  :height height}]
@@ -118,6 +103,9 @@
 (def examples
   [["line"
     [:line [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]]]]
+   ["axes-simple"
+    [:axes "left bottom"
+     [:column "Positive" 39]]]
    ["out1a"
     [:column "Positive" 39]]
    ["out1b"
@@ -129,7 +117,13 @@
     [:overlay
      [[:fill-color "#2CA02C" [:column "Positive" 39]]
       [:fill-color "#D62728" [:column "Negative" 43]]
-      [:fill-color "#1F77B4" [:column "Neutral" 17]]]]]])
+      [:fill-color "#1F77B4" [:column "Neutral" 17]]]]]
+   ["out2b"
+    [:axes "left bottom"
+     [:overlay
+      [[:fill-color "#2CA02C" [:column "Positive" 39]]
+       [:fill-color "#D62728" [:column "Negative" 43]]
+       [:fill-color "#1F77B4" [:column "Neutral" 17]]]]]]])
 
 (defn ^:export ^:dev/after-load init []
   #_(let [d (.axes c "left bottom"
@@ -162,6 +156,7 @@
                                     [::cc/Categorical [[::cc/CA "Positive"]]]
                                     [::cc/CAR [::cc/CA "Positive"] 1]))
 
+  (set! (.-innerHTML (js/document.getElementById "demo")) "")
   (set! (.-innerHTML (js/document.getElementById "demo"))
         (->>
          examples
