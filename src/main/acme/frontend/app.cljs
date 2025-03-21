@@ -88,7 +88,15 @@
     (set! (.-innerHTML el) (hr/render-html svg))))
 
 (def examples
-  [["out1a" (c/column "Positive" 39)]])
+  [["line"
+    (c/line [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]])]
+   ["out1a"
+    (c/column "Positive" 39)]
+   ["out1b"
+    (c/overlay
+     [(c/column "Positive" 39)
+      (c/column "Negative" 43)
+      (c/column "Neutral" 17)])]])
 
 (defn ^:export ^:dev/after-load init []
   #_(let [d (.axes c "left bottom"
@@ -116,12 +124,18 @@
 
   ; (js/console.log "clj" (union->clj (c/column "Positive" 39)))
 
-  (set! (.-innerHTML (js/document.getElementById "demo"))
-        (->> examples
-             (map (fn [[label viz]]
-                    (hr/render-html
-                     [:div
-                      [:h2 label]
-                      (create-svg false false 500 200 viz)])))
-             (str/join "\n"))))
+  #_(js/console.log "project-single"
+                    (cc/project-one false [0 500]
+                                    [::cc/Categorical [[::cc/CA "Positive"]]]
+                                    [::cc/CAR [::cc/CA "Positive"] 1]))
 
+  (set! (.-innerHTML (js/document.getElementById "demo"))
+        (->>
+         examples
+         ; [(last examples)]
+         (map (fn [[label viz]]
+                (hr/render-html
+                 [:div
+                  [:h2 label]
+                  (create-svg false false 500 200 viz)])))
+         (str/join "\n"))))
