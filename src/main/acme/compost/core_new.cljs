@@ -73,9 +73,15 @@
                        :transform (format "translate(%f,%f) rotate(%f)" x y rotation)})
                     (assoc :style style))]
       [[:text attrs t]])
+
     ::Combine
     (let [[_ ss] svg]
       (mapcat #(render-svg ctx %) ss))
+
+    ::Ellipse
+    (let [[_ [cx cy] [rx ry] style] svg]
+      [[:ellipse {:cx (str cx) :cy (str cy) :rx (str rx) :ry (str ry)
+                  :style style}]])
 
     ::Path
     (let [[_ p style] svg]
@@ -89,9 +95,9 @@
 (defn union-scales [s1 s2]
   (case [(first s1) (first s2)]
     [::Continuous ::Continuous]
-    (let [[_ l1 h1] s1
-          [_ l2 h2] s2]
-      [::Continuous (min l1 l2) (max h1 h2)])
+    (let [[_ [_ l1] [_ h1]] s1
+          [_ [_ l2] [_ h2]] s2]
+      [::Continuous [::CO (min l1 l2)] [::CO (max h1 h2)]])
 
     [::Categorical ::Categorical]
     (let [[_ v1] s1
@@ -196,6 +202,15 @@
       (let [[_ pads shape] shape
             [[sx sy] shape] (calculate-scales shape)]
         [[sx sy] [::ScaledPadding pads sx sy shape]])
+
+      ::Bubble
+      (let [[_ x y rx ry] shape]
+        (letfn [(make-singleton-scale [val]
+                  (case (first val)
+                    ::COV (let [[_ v] val] [::Continuous v v])
+                    ::CAR (let [[_ v _] val] [::Categorical [v]])))]
+          (let [scales [(make-singleton-scale x) (make-singleton-scale y)]]
+            [scales [::ScaledBubble x y rx ry]])))
 
       ::Text
       (let [[_ x y va ha r t] shape]
@@ -430,7 +445,11 @@
             xy (project [x y])
             style (str "alignment-baseline:" va "; text-anchor:" ha ";"
                        (format-style (::definitions ctx) (::style ctx)))]
-        [::Text xy t r style]))))
+        [::Text xy t r style])
+
+      ::ScaledBubble
+      (let [[_ x y rx ry] shape]
+        [::Ellipse (project [x y]) [rx ry] (format-style (::definitions ctx) (::style ctx))]))))
 
 ;; ------------------------------------------------------------------------------------------------
 ;; Event handling
@@ -439,6 +458,9 @@
 ;; ------------------------------------------------------------------------------------------------
 ;; Derived
 ;; ------------------------------------------------------------------------------------------------
+
+(defn stroke-color [clr s]
+  [::Style (fn [style] (assoc style ::stroke-color [1.0 [::HTML clr]])) s])
 
 (defn fill-color [clr s]
   [::Style (fn [style] (assoc style ::fill [::Solid [1.0 [::HTML clr]]])) s])
