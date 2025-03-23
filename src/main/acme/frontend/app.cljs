@@ -2,12 +2,11 @@
   (:require
    ["compostjs/dist/core" :refer [Compost$$$defstyle Drawing$$$drawShape
                                   Drawing$002EDrawingContext
-                                  Scales$$$calculateScales
-                                  Svg$002ERenderingContext
-                                  Svg$$$renderSvg]]
-   ["compostjs/dist/fable-library.2.10.1/Types" :refer [List Union]]
+                                  Scales$$$calculateScales Svg$$$renderSvg
+                                  Svg$002ERenderingContext]]
    [acme.compost :as c]
-   [acme.compost.core-new :as cc :refer [union? union->clj]]
+   [acme.compost.core-new :as cc :refer [union->clj union?]]
+   [acme.fish :as fish]
    [clojure.string :as str]
    [clojure.walk :as walk]
    [hiccups.runtime :as hr]))
@@ -161,7 +160,9 @@
    ["bubbles"
     [:overlay
      (for [[x y] [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]]]
-       [:bubble x y 1 1])]]])
+       [:bubble x y 1 1])]]
+   ["fish"
+    [:stroke-color "green" fish/fish]]])
 
 (defn ^:export ^:dev/after-load init []
   #_(let [d (.axes c "left bottom"
