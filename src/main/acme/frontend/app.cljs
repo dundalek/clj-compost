@@ -164,6 +164,54 @@
    ["fish"
     [:stroke-color "green" fish/fish]]])
 
+(defn draw-canvas [ctx width height viz]
+  (let [defs-clj (atom [])
+        draw-ctx-clj {::cc/definitions defs-clj ::cc/style cc/defstyle}
+        viz-clj (from-hiccup-clj viz)
+        [[sx-clj sy-clj] shape-clj] (cc/calculate-scales cc/defstyle viz-clj)
+        svg-clj (cc/draw-shape draw-ctx-clj 0 0 width height sx-clj sy-clj shape-clj)]
+    (js/console.log "svg-clj" svg-clj)
+    (cc/render-canvas ctx svg-clj)))
+
+(defn render-canvas-examples []
+  (let [container (.getElementById js/document "root")
+        width 600
+        height 300]
+
+    (set! (.-innerHTML container) "")
+    (doseq [[label viz] (->> examples
+                             reverse)]
+      (let [canvas (.createElement js/document "canvas")
+            _ (.appendChild container
+                            (doto (.createElement js/document "div")
+                              (.appendChild
+                               (doto (.createElement js/document "h2")
+                                 (set! -innerText label)))
+                              (.appendChild canvas)))
+            ctx (.getContext canvas "2d")]
+
+        (set! (.-width canvas) width)
+        (set! (.-height canvas) height)
+        (.clearRect ctx 0 0 (.-width canvas) (.-height canvas))
+        (set! (.-strokeStyle ctx) "#FF0000")
+        (set! (.-lineWidth ctx) 2)
+
+        (draw-canvas ctx width height viz)))))
+
+(defn render-svg-examples []
+  (set! (.-innerHTML (js/document.getElementById "demo")) "")
+  (set! (.-innerHTML (js/document.getElementById "demo"))
+        (->>
+         examples
+         ; [(last examples)]
+         reverse
+         (map (fn [[label viz]]
+                (hr/render-html
+                 [:div
+                  [:h2 label]
+                  (create-svg false false 500 200 viz)])))
+         (str/join "\n"))))
+
 (defn ^:export ^:dev/after-load init []
   #_(let [d (.axes c "left bottom"
                    (.line c (clj->js [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]])))]
@@ -195,15 +243,7 @@
                                     [::cc/Categorical [[::cc/CA "Positive"]]]
                                     [::cc/CAR [::cc/CA "Positive"] 1]))
 
-  (set! (.-innerHTML (js/document.getElementById "demo")) "")
-  (set! (.-innerHTML (js/document.getElementById "demo"))
-        (->>
-         examples
-         ; [(last examples)]
-         reverse
-         (map (fn [[label viz]]
-                (hr/render-html
-                 [:div
-                  [:h2 label]
-                  (create-svg false false 500 200 viz)])))
-         (str/join "\n"))))
+  #_(render-svg-examples)
+  (render-canvas-examples))
+
+

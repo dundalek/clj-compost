@@ -88,6 +88,42 @@
       [[:path {:d (svg-format-path p)
                :style style}]])))
 
+(defn render-canvas [ctx shape]
+  (case (first shape)
+    ::Text
+    (let [[_ [x y] t rotation style] shape]
+      (.save ctx)
+      (if (= rotation 0.0)
+        (.fillText ctx t x y)
+        (throw (js/Error. "Rotation not implemented yet")))
+      (.restore ctx))
+
+    ::Combine
+    (let [[_ ss] shape]
+      (doseq [s ss]
+        (render-canvas ctx s)))
+
+    ::Ellipse
+    (let [[_ [cx cy] [rx ry] style] shape]
+      (.save ctx)
+      (.beginPath ctx)
+      (.ellipse ctx cx cy rx ry 0 0 (* 2 Math/PI))
+      (.stroke ctx)
+      (.restore ctx))
+
+    ::Path
+    (let [[_ path style] shape]
+      (.save ctx)
+      (.beginPath ctx)
+      (doseq [segment path]
+        (case (first segment)
+          ::MoveTo (let [[_ [x y]] segment]
+                     (.moveTo ctx x y))
+          ::LineTo (let [[_ [x y]] segment]
+                     (.lineTo ctx x y))))
+      (.stroke ctx)
+      (.restore ctx))))
+
 ;; ------------------------------------------------------------------------------------------------
 ;; Calculating scales
 ;; ------------------------------------------------------------------------------------------------
