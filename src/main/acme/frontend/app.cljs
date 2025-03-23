@@ -173,11 +173,11 @@
     (js/console.log "svg-clj" svg-clj)
     (cc/render-canvas ctx svg-clj)))
 
-(defn render-canvas-examples []
-  (let [container (.getElementById js/document "root")
-        width 600
-        height 300]
+(def example-width 500)
+(def example-height 200)
 
+(defn render-canvas-examples []
+  (let [container (.getElementById js/document "canvas-examples")]
     (set! (.-innerHTML container) "")
     (doseq [[label viz] (->> examples
                              reverse)]
@@ -190,27 +190,28 @@
                               (.appendChild canvas)))
             ctx (.getContext canvas "2d")]
 
-        (set! (.-width canvas) width)
-        (set! (.-height canvas) height)
+        (set! (.-width canvas) example-width)
+        (set! (.-height canvas) example-height)
         (.clearRect ctx 0 0 (.-width canvas) (.-height canvas))
         (set! (.-strokeStyle ctx) "#FF0000")
         (set! (.-lineWidth ctx) 2)
 
-        (draw-canvas ctx width height viz)))))
+        (draw-canvas ctx example-width example-height viz)))))
 
 (defn render-svg-examples []
-  (set! (.-innerHTML (js/document.getElementById "demo")) "")
-  (set! (.-innerHTML (js/document.getElementById "demo"))
-        (->>
-         examples
-         ; [(last examples)]
-         reverse
-         (map (fn [[label viz]]
-                (hr/render-html
-                 [:div
-                  [:h2 label]
-                  (create-svg false false 500 200 viz)])))
-         (str/join "\n"))))
+  (let [container (js/document.getElementById "svg-examples")]
+    (set! (.-innerHTML container) "")
+    (set! (.-innerHTML container)
+          (->>
+           examples
+           ; [(last examples)]
+           reverse
+           (map (fn [[label viz]]
+                  (hr/render-html
+                   [:div
+                    [:h2 label]
+                    (create-svg false false example-width example-height viz)])))
+           (str/join "\n")))))
 
 (defn ^:export ^:dev/after-load init []
   #_(let [d (.axes c "left bottom"
@@ -243,7 +244,7 @@
                                     [::cc/Categorical [[::cc/CA "Positive"]]]
                                     [::cc/CAR [::cc/CA "Positive"] 1]))
 
-  #_(render-svg-examples)
+  (render-svg-examples)
   (render-canvas-examples))
 
 
