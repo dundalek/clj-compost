@@ -24,8 +24,8 @@
 
     (iterator? x) (map union->clj x)
 
-    ;; keep array as array for because points are also represented as arrays and end up wrongly formatted for coordinates otherwise
-    (array? x) (.map x union->clj)
+    (array? x) (mapv union->clj x)
+
     #_(with-meta
         (mapv union->clj x)
         {::original x})
@@ -57,9 +57,9 @@
   (->> path
        (map (fn [[tag :as segment]]
               (case tag
-                ::MoveTo (let [[_ x y] segment]
+                ::MoveTo (let [[_ [x y]] segment]
                            (str "M" x " " y " "))
-                ::LineTo (let [[_ x y] segment]
+                ::LineTo (let [[_ [x y]] segment]
                            (str "L" x " " y " ")))))
        (str/join "")))
 
