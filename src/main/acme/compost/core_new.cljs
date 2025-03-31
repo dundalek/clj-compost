@@ -53,6 +53,8 @@
 ;; SVG stuff
 ;; ------------------------------------------------------------------------------------------------
 
+(declare format-style)
+
 (defn svg-format-path [path]
   (->> path
        (map (fn [[tag :as segment]]
@@ -71,7 +73,7 @@
                       {:x (str x) :y (str y)}
                       {:x "0" :y "0"
                        :transform (format "translate(%f,%f) rotate(%f)" x y rotation)})
-                    (assoc :style style))]
+                    (assoc :style (format-style (::definitions ctx) style)))]
       [[:text attrs t]])
 
     ::Combine
@@ -81,12 +83,12 @@
     ::Ellipse
     (let [[_ [cx cy] [rx ry] style] svg]
       [[:ellipse {:cx (str cx) :cy (str cy) :rx (str rx) :ry (str ry)
-                  :style style}]])
+                  :style (format-style (::definitions ctx) style)}]])
 
     ::Path
     (let [[_ p style] svg]
       [[:path {:d (svg-format-path p)
-               :style style}]])))
+               :style (format-style (::definitions ctx) style)}]])))
 
 (defn render-canvas [ctx shape]
   (case (first shape)
@@ -399,7 +401,7 @@
 
 (defn format-style [defs style]
   (let [style-clj (style-fs->clj style)
-        {::keys [animation cursor font stroke-color stroke-width fill]} style-clj]
+        {::keys [animation cursor font stroke-color stroke-width fill alignment-baseline text-anchor]} style-clj]
     (assert (nil? animation) "Animation not implemented")
     (str
      "cursor:" cursor ";"
@@ -409,7 +411,9 @@
        (format "stroke-opacity:%f; stroke-width:%dpx; stroke:%s; " so sw (format-color clr)))
      (case (first fill)
        ::Solid (let [[_ [fo clr]] fill]
-                 (format "fill-opacity:%f; fill:%s; " fo (format-color clr)))))))
+                 (format "fill-opacity:%f; fill:%s; " fo (format-color clr))))
+     (when alignment-baseline (str "alignment-baseline:" alignment-baseline ";"))
+     (when text-anchor (str "text-anchor:" text-anchor ";")))))
 
 (defn draw-shape [ctx x1 y1 x2 y2 sx sy [tag :as shape]]
   (let [project (fn [[vx vy]]
@@ -435,7 +439,7 @@
                            (map (fn [pt] [::LineTo (project pt)]))
                            (rest points))
                      (conj [::LineTo (project (first points))]))
-            style (format-style (::definitions ctx) (hide-stroke (::style ctx)))]
+            style (hide-stroke (::style ctx))]
         [::Path path style])
 
       ::ScaledPadding
@@ -465,7 +469,7 @@
             path (into [[::MoveTo (project (first line))]]
                        (map (fn [pt] [::LineTo (project pt)]))
                        (rest line))
-            style (format-style (::definitions ctx) (hide-fill (::style ctx)))]
+            style (hide-fill (::style ctx))]
         [::Path path style])
 
       ::ScaledText
@@ -479,13 +483,14 @@
                  ::Center "middle"
                  ::End "end")
             xy (project [x y])
-            style (str "alignment-baseline:" va "; text-anchor:" ha ";"
-                       (format-style (::definitions ctx) (::style ctx)))]
+            style (assoc (::style ctx)
+                         ::alignment-baseline va
+                         ::text-anchor ha)]
         [::Text xy t r style])
 
       ::ScaledBubble
       (let [[_ x y rx ry] shape]
-        [::Ellipse (project [x y]) [rx ry] (format-style (::definitions ctx) (::style ctx))]))))
+        [::Ellipse (project [x y]) [rx ry] (::style ctx)]))))
 
 ;; ------------------------------------------------------------------------------------------------
 ;; Event handling
@@ -521,6 +526,10 @@
    ::cursor "default"
    ::font "10pt sans-serif"
    ::format-axis-x-label default-format
-   ::format-axis-y-label default-format})
+   ::format-axis-y-label default-format
+
+   ;; introduced during style refactor
+   ::alignment-baseline nil
+   ::text-anchor nil})
 
 ; create-svg
