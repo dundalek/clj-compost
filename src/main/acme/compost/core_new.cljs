@@ -93,7 +93,7 @@
 
 (defn apply-canvas-style [ctx style]
   (let [style-clj (style-fs->clj style)
-        {::keys [animation cursor font stroke-color stroke-width fill alignment-baseline text-anchor]} style-clj]
+        {::keys [animation cursor font stroke-color stroke-width fill text-vertical text-horizontal]} style-clj]
     (assert (nil? animation) "Animation not implemented")
     (assert (= cursor "default") "Non-default cursor not implemented")
     (set! (.-font ctx) font)
@@ -425,7 +425,7 @@
 
 (defn format-style [defs style]
   (let [style-clj (style-fs->clj style)
-        {::keys [animation cursor font stroke-color stroke-width fill alignment-baseline text-anchor]} style-clj]
+        {::keys [animation cursor font stroke-color stroke-width fill text-vertical text-horizontal]} style-clj]
     (assert (nil? animation) "Animation not implemented")
     (str
      "cursor:" cursor ";"
@@ -436,8 +436,18 @@
      (case (first fill)
        ::Solid (let [[_ [fo clr]] fill]
                  (format "fill-opacity:%f; fill:%s; " fo (format-color clr))))
-     (when alignment-baseline (str "alignment-baseline:" alignment-baseline ";"))
-     (when text-anchor (str "text-anchor:" text-anchor ";")))))
+     (when text-vertical
+       (let [va (case (first text-vertical)
+                  ::Baseline "baseline"
+                  ::Hanging "hanging"
+                  ::Middle "middle")]
+         (str "alignment-baseline:" va ";")))
+     (when text-horizontal
+       (let [ha (case (first text-horizontal)
+                  ::Start "start"
+                  ::Center "middle"
+                  ::End "end")]
+         (str "text-anchor:" ha ";"))))))
 
 (defn draw-shape [ctx x1 y1 x2 y2 sx sy [tag :as shape]]
   (let [project (fn [[vx vy]]
@@ -497,19 +507,11 @@
         [::Path path style])
 
       ::ScaledText
-      (let [[_ x y [va] [ha] r t] shape
-            va (case va
-                 ::Baseline "baseline"
-                 ::Hanging "hanging"
-                 ::Middle "middle")
-            ha (case ha
-                 ::Start "start"
-                 ::Center "middle"
-                 ::End "end")
+      (let [[_ x y va ha r t] shape
             xy (project [x y])
             style (assoc (::style ctx)
-                         ::alignment-baseline va
-                         ::text-anchor ha)]
+                         ::text-vertical va
+                         ::text-horizontal ha)]
         [::Text xy t r style])
 
       ::ScaledBubble
@@ -553,7 +555,7 @@
    ::format-axis-y-label default-format
 
    ;; introduced during style refactor
-   ::alignment-baseline nil
-   ::text-anchor nil})
+   ::text-vertical nil
+   ::text-horizontal nil})
 
 ; create-svg
