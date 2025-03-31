@@ -107,10 +107,20 @@
       ::Solid (let [[_ [fo clr]] fill]
                 (set! (.-fillStyle ctx) (format-color clr))
                 (when (not= fo 0.0)
-                  (.fill ctx))))))
-    ;; TODO
-    ;; alignment-baseline
-    ;; text-anchor
+                  (.fill ctx))))
+    (when text-vertical
+      (let [va (case (first text-vertical)
+                 ;; not sure if "baseline" from SVG maps well, trying alphabetic because it is the default for canvas
+                 ::Baseline "alphabetic"
+                 ::Hanging "hanging"
+                 ::Middle "middle")]
+        (set! (.-textBaseline ctx) va)))
+    (when text-horizontal
+      (let [ha (case (first text-horizontal)
+                 ::Start "start"
+                 ::Center "center"
+                 ::End "end")]
+        (set! (.-textAlign ctx) ha)))))
 
 (defn render-canvas [ctx shape]
   (case (first shape)
