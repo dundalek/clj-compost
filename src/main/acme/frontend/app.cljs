@@ -176,9 +176,35 @@
 (def example-width 500)
 (def example-height 200)
 
+(defn render-compost-examples []
+  (let [container (.getElementById js/document "compost-examples")]
+    (set! (.-innerHTML container) "")
+    (.appendChild container
+                  (let [heading (.createElement js/document "h1")]
+                    (set! (.-innerText heading) "Js SVG")
+                    heading))
+    (doseq [[label viz] (->> examples
+                             reverse)]
+      (let [div (.createElement js/document "div")
+            id (str "compost-example-" label)
+            _ (.appendChild container
+                            (doto (.createElement js/document "div")
+                              (.appendChild
+                               (doto (.createElement js/document "h2")
+                                 (set! -innerText label)))
+                              (.appendChild div)))]
+        (set! (.-id div) id)
+        (set! (.-style.width div) (str example-width "px"))
+        (set! (.-style.height div) (str example-height "px"))
+        (c/render id (from-hiccup-fs viz))))))
+
 (defn render-canvas-examples []
   (let [container (.getElementById js/document "canvas-examples")]
     (set! (.-innerHTML container) "")
+    (.appendChild container
+                  (let [heading (.createElement js/document "h1")]
+                    (set! (.-innerText heading) "Clj Canvas")
+                    heading))
     (doseq [[label viz] (->> examples
                              reverse)]
       (let [canvas (.createElement js/document "canvas")
@@ -207,10 +233,11 @@
            ; [(last examples)]
            reverse
            (map (fn [[label viz]]
-                  (hr/render-html
-                   [:div
-                    [:h2 label]
-                    (create-svg false false example-width example-height viz)])))
+                  [:div
+                   [:h2 label]
+                   (create-svg false false example-width example-height viz)]))
+           (cons [:h1 "Clj SVG"])
+           (map hr/render-html)
            (str/join "\n")))))
 
 (defn ^:export ^:dev/after-load init []
@@ -244,6 +271,7 @@
                                     [::cc/Categorical [[::cc/CA "Positive"]]]
                                     [::cc/CAR [::cc/CA "Positive"] 1]))
 
+  (render-compost-examples)
   (render-svg-examples)
   (render-canvas-examples))
 
