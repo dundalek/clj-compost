@@ -1,49 +1,53 @@
 (ns acme.compost.core-new
   (:require
    [clojure.string :as str]
-   [goog.string :refer [format]]
-   ["compostjs/dist/core" :refer [Drawing$$$hideFill]]
-   ["compostjs/dist/fable-library.2.10.1/Types" :refer [List Union]]))
+   #?(:cljs [goog.string :refer [format]])
+   #?(:cljs ["compostjs/dist/fable-library.2.10.1/Types" :refer [List Union]])))
 
-(defn union? [x]
-  (instance? Union x))
+#?(:clj
+   (defn style-fs->clj [style]
+     style)
+   :cljs
+   (do
+     (defn union? [x]
+       (instance? Union x))
 
-(defn iterator? [x]
-  (and (object? x) (fn? (aget x js/Symbol.iterator))))
+     (defn iterator? [x]
+       (and (object? x) (fn? (aget x js/Symbol.iterator))))
 
-(defn union->clj [x]
-  (cond
-    (union? x) (-> (into
-                    [(keyword "acme.compost.core-new" (.-name x))]
-                    (map union->clj)
-                    (.-fields x))
-                   #_(with-meta
-                       {::original x}))
+     (defn union->clj [x]
+       (cond
+         (union? x) (-> (into
+                         [(keyword "acme.compost.core-new" (.-name x))]
+                         (map union->clj)
+                         (.-fields x))
+                        #_(with-meta
+                            {::original x}))
 
-    (instance? List x) (map union->clj x)
+         (instance? List x) (map union->clj x)
 
-    (iterator? x) (map union->clj x)
+         (iterator? x) (map union->clj x)
 
-    (array? x) (mapv union->clj x)
+         (array? x) (mapv union->clj x)
 
-    #_(with-meta
-        (mapv union->clj x)
-        {::original x})
+         #_(with-meta
+             (mapv union->clj x)
+             {::original x})
 
-    :else x))
+         :else x))
 
-(defn style-fs->clj [style]
-  (if (map? style)
-    style
-    {::fill (union->clj (.-Fill style))
-     ::stroke-color (union->clj  (.-StrokeColor style))
-     ::stroke-dash-array (union->clj (.-StrokeDashArray style))
-     ::stroke-width (union->clj (.-StrokeWidth style))
-     ::animation (.-Animation style)
-     ::cursor (.-Cursor style)
-     ::font (.-Font style)
-     ::format-axis-x-label (.-FormatAxisXLabel style)
-     ::format-axis-y-label (.-FormatAxisYLabel style)}))
+     (defn style-fs->clj [style]
+       (if (map? style)
+         style
+         {::fill (union->clj (.-Fill style))
+          ::stroke-color (union->clj  (.-StrokeColor style))
+          ::stroke-dash-array (union->clj (.-StrokeDashArray style))
+          ::stroke-width (union->clj (.-StrokeWidth style))
+          ::animation (.-Animation style)
+          ::cursor (.-Cursor style)
+          ::font (.-Font style)
+          ::format-axis-x-label (.-FormatAxisXLabel style)
+          ::format-axis-y-label (.-FormatAxisYLabel style)}))))
 
 ;; ------------------------------------------------------------------------------------------------
 ;; Domain that users see
@@ -130,7 +134,7 @@
       (apply-canvas-style ctx style)
       (if (= rotation 0.0)
         (.fillText ctx t x y)
-        (throw (js/Error. "Rotation not implemented yet")))
+        (throw (ex-info "Rotation not implemented yet" {})))
       (.restore ctx))
 
     ::Combine
@@ -176,7 +180,7 @@
           [_ v2] s2]
       [::Categorical (distinct (concat v1 v2))])
 
-    (throw (js/Error. "Cannot union continuous with categorical"))))
+    (throw (ex-info "Cannot union continuous with categorical" {}))))
 
 (defn calculate-shape-scale [vs]
   ;; TODO: implement mismatched scales checking
@@ -399,10 +403,10 @@
         (+ tlv (* (- thv tlv) (/ (- v slv) (- shv slv))))))
 
     [::Categorical ::COV]
-    (throw (js/Error. (str "Cannot project continuous value " coord " on a categorical scale " scale)))
+    (throw (ex-info (str "Cannot project continuous value " coord " on a categorical scale " scale) {}))
 
     [::Continuous ::CAR]
-    (throw (js/Error. (str "Cannot project categorical value " coord " on a continuous scale " scale)))))
+    (throw (ex-info (str "Cannot project categorical value " coord " on a continuous scale " scale) {}))))
 
 (def project-one-x (partial project-one false))
 (def project-one-y (partial project-one true))
@@ -461,8 +465,8 @@
 
 (defn draw-shape [ctx x1 y1 x2 y2 sx sy [tag :as shape]]
   (let [project (fn [[vx vy]]
-                  (let [result #js[(project-one-x [x1 x2] sx vx)
-                                   (project-one-y [y1 y2] sy vy)]]
+                  (let [result [(project-one-x [x1 x2] sx vx)
+                                (project-one-y [y1 y2] sy vy)]]
                     result))]
     (case tag
       ::ScaledOffset
@@ -541,6 +545,13 @@
 
 (defn fill-color [clr s]
   [::Style (fn [style] (assoc style ::fill [::Solid [1.0 [::HTML clr]]])) s])
+
+(defn column [x y]
+  [::Shape
+   [[[::CAR x 0.0] [::COV y]]
+    [[::CAR x 1.0] [::COV y]]
+    [[::CAR x 1.0] [::COV [::CO 0.0]]]
+    [[::CAR x 0.0] [::COV [::CO 0.0]]]]])
 
 ;; ------------------------------------------------------------------------------------------------
 ;; integration

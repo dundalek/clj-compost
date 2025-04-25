@@ -9,7 +9,8 @@
    [acme.fish :as fish]
    [clojure.string :as str]
    [clojure.walk :as walk]
-   [hiccups.runtime :as hr]))
+   [hiccups.runtime :as hr]
+   [acme.compost.util :refer [from-hiccup from-hiccup-crossplatform]]))
 
 (defn element->hiccup [el]
   (assert (union? el))
@@ -30,26 +31,19 @@
     (let [[text] (.-fields el)]
       text)))
 
-(defn from-hiccup [kw->constructor viz]
-  (walk/postwalk (fn [x]
-                   (if-not (and (vector? x) (keyword? (first x)))
-                     x
-                     (let [[viz-kw & args] x]
-                       (apply (get kw->constructor viz-kw) args))))
-                 viz))
-
 (defn from-hiccup-fs [viz]
   (from-hiccup c/kw->constructor viz))
 
 (def kw->constructor-clj
-  (merge c/kw->constructor
-         {:fill-color cc/fill-color
-          :stroke-color cc/stroke-color
-          :overlay (fn [sh] [::cc/Layered sh])
-          :axes (fn [a s]
-                  [::cc/Axes
-                   (str/includes? a "top") (str/includes? a "right") (str/includes? a "bottom") (str/includes? a "left")
-                   s])}))
+  (merge
+   c/kw->constructor
+   {:fill-color cc/fill-color
+    :stroke-color cc/stroke-color
+    :overlay (fn [sh] [::cc/Layered sh])
+    :axes (fn [a s]
+            [::cc/Axes
+             (str/includes? a "top") (str/includes? a "right") (str/includes? a "bottom") (str/includes? a "left")
+             s])}))
 
 (defn from-hiccup-clj [viz]
   (->>
@@ -78,6 +72,9 @@
         shape-clj (union->clj shape-fs)
         svg-clj (union->clj svg-fs)
         viz-clj (from-hiccup-clj viz)
+        _ (js/console.log "viz-clj" viz-clj)
+        viz-clj (from-hiccup-crossplatform viz)
+        _ (js/console.log "viz-clj-crossplatform" viz-clj)
         defs-clj (atom [])
         draw-ctx-clj {::cc/definitions defs-clj ::cc/style cc/defstyle}
         render-ctx-clj {}

@@ -1,0 +1,4 @@
+{:deps
+ {com.phronemophobic/membrane {:git/sha "6e5b0473b3efda978e24876f241f30fcae5a5990"
+                               :git/url "https://github.com/phronmophobic/membrane"}
+  compost/compost {:local/root "../.."}}}
