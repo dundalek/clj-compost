@@ -1,4 +1,4 @@
-(ns acme.fish)
+(ns example.fish)
 
 (def outline-base
   [:line '((1. 1.)

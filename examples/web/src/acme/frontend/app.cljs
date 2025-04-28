@@ -6,7 +6,7 @@
                                   Svg$002ERenderingContext]]
    [acme.compost :as c]
    [io.github.dundalek.compost.core :as cc :refer [union->clj union?]]
-   [acme.fish :as fish]
+   [example.fish :as fish]
    [clojure.string :as str]
    [clojure.walk :as walk]
    [hiccups.runtime :as hr]
