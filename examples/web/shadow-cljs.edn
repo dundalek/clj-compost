@@ -1,12 +1,4 @@
-;; shadow-cljs configuration
-{:source-paths
- ["src/dev"
-  "src/main"
-  "src/test"]
-
- :dependencies
- [[hiccups/hiccups "0.3.0"]
-  [binaryage/devtools "1.0.7"]]
+{:deps true
 
  :dev-http {8080 "public"}
 

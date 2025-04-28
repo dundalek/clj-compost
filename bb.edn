@@ -1,2 +1,2 @@
 {:tasks
- {dev (shell "npx shadow-cljs watch frontend")}}
+ {dev (shell {:dir "examples/web"} "npx shadow-cljs watch frontend")}}

@@ -1,0 +1,4 @@
+{:deps {hiccups/hiccups {:mvn/version "0.3.0"}
+        binaryage/devtools {:mvn/version "1.0.7"}
+        compost/compost {:local/root "../.."}
+        thheller/shadow-cljs {:mvn/version "3.0.3"}}}
