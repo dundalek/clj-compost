@@ -85,7 +85,24 @@
 (defui svg [{:keys [path]}]
   (skia/svg (.getBytes (slurp path) "utf-8")))
 
-(defui app [_]
+; (defui demo [_])
+  ; (ui/vertical-layout))
+   ; (counter {:num 10})
+   ; (graph {})
+   ; (compost-svg {:viz [:line [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]]]})
+   ; (compost-svg {:viz [:axes "left bottom"
+   ;                     [:overlay
+   ;                      [[:fill-color "#2CA02C" [:column "Positive" 39]]
+   ;                       [:fill-color "#D62728" [:column "Negative" 43]]
+   ;                       [:fill-color "#1F77B4" [:column "Neutral" 17]]]]]})))
+   ; (svg {:path "/home/me/Downloads/text.svg"})
+   ; (svg {:path "/home/me/Downloads/text-simple.svg"})
+   ; (svg {:path "/home/me/Downloads/x.svg"})))
+
+(defui sidebar [_]
+  (ui/label "Sidebar placeholder"))
+
+(defui chart-examples [_]
   (let [body (apply ui/vertical-layout
                     (->> examples
                          (mapcat (fn [[label viz]]
@@ -103,18 +120,11 @@
                  :scroll-bounds container-size})
                body)]
     body))
-  ; (ui/vertical-layout))
-   ; (counter {:num 10})
-   ; (graph {})
-   ; (compost-svg {:viz [:line [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]]]})
-   ; (compost-svg {:viz [:axes "left bottom"
-   ;                     [:overlay
-   ;                      [[:fill-color "#2CA02C" [:column "Positive" 39]]
-   ;                       [:fill-color "#D62728" [:column "Negative" 43]]
-   ;                       [:fill-color "#1F77B4" [:column "Neutral" 17]]]]]})))
-   ; (svg {:path "/home/me/Downloads/text.svg"})
-   ; (svg {:path "/home/me/Downloads/text-simple.svg"})
-   ; (svg {:path "/home/me/Downloads/x.svg"})))
+
+(defui app [_]
+  (ui/horizontal-layout
+   (sidebar {})
+   (chart-examples {})))
 
 (comment
   (skia/run (component/make-app #'app {})))
