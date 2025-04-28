@@ -1,4 +1,4 @@
-(ns acme.compost.core-new
+(ns io.github.dundalek.compost.core
   (:require
    [clojure.string :as str]
    #?(:cljs [goog.string :refer [format]])
@@ -18,7 +18,7 @@
      (defn union->clj [x]
        (cond
          (union? x) (-> (into
-                         [(keyword "acme.compost.core-new" (.-name x))]
+                         [(keyword "io.github.dundalek.compost.core" (.-name x))]
                          (map union->clj)
                          (.-fields x))
                         #_(with-meta

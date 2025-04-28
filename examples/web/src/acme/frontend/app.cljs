@@ -5,12 +5,12 @@
                                   Scales$$$calculateScales Svg$$$renderSvg
                                   Svg$002ERenderingContext]]
    [acme.compost :as c]
-   [acme.compost.core-new :as cc :refer [union->clj union?]]
+   [io.github.dundalek.compost.core :as cc :refer [union->clj union?]]
    [acme.fish :as fish]
    [clojure.string :as str]
    [clojure.walk :as walk]
    [hiccups.runtime :as hr]
-   [acme.compost.util :refer [from-hiccup from-hiccup-crossplatform]]))
+   [io.github.dundalek.compost :refer [from-hiccup from-hiccup-crossplatform]]))
 
 (defn element->hiccup [el]
   (assert (union? el))

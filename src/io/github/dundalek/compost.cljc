@@ -1,6 +1,6 @@
-(ns acme.compost.util
+(ns io.github.dundalek.compost
   (:require
-   [acme.compost.core-new :as cc]
+   [io.github.dundalek.compost.core :as cc]
    [clojure.string :as str]
    [clojure.walk :as walk]))
 

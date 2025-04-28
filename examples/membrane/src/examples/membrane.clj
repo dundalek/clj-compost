@@ -3,8 +3,8 @@
    [membrane.java2d :as java2d]
    [membrane.ui :as ui]
    [membrane.component :as component :refer [defui defeffect]]
-   [acme.compost.core-new :as cc]
-   [acme.compost.util :as cu]
+   [io.github.dundalek.compost.core :as cc]
+   [io.github.dundalek.compost :as cu]
    [membrane.skia :as skia]
    [hiccup2.core :as h]))
 
