@@ -1,7 +1,6 @@
 (ns examples.membrane
   (:require
    [example.tutorial :refer [examples]]
-   [membrane.java2d :as java2d]
    [membrane.ui :as ui]
    [membrane.basic-components :as basic]
    [membrane.component :as component :refer [defui defeffect]]
@@ -118,28 +117,6 @@
    ; (svg {:path "/home/me/Downloads/x.svg"})))
 
 (comment
-  ;; pop up a window showing our counter with
-  ;; num initially set to 10
-  (java2d/run (component/make-app #'counter {:num 10}))
-
-  (java2d/run (component/make-app #'app {}))
-
-  (skia/run (component/make-app #'app {}))
+  (skia/run (component/make-app #'app {})))
             ; {:include-container-info true
             ;  :window-title "Easel"})
-
-  (let [width 600
-        height 300
-        viz [:line [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]]]
-        defs-clj (atom [])
-        defs-clj (atom [])
-        draw-ctx-clj {::cc/definitions defs-clj ::cc/style cc/defstyle}
-        render-ctx-clj {}
-        viz-clj (cu/from-hiccup-crossplatform viz)
-        shape-clj (cc/draw-shape draw-ctx-clj 0 0 width height sx-clj sy-clj shape-clj)]
-    ;     body (csvg/render-svg render-ctx-clj shape-clj)]
-    ; (into [:svg {:style "overflow:visible"
-    ;              :width width
-    ;              :height height}]
-    ;       body)
-    (render-membrane render-ctx-clj shape-clj)))
