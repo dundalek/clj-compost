@@ -1,7 +1,9 @@
 (ns examples.membrane
   (:require
+   [example.tutorial :refer [examples]]
    [membrane.java2d :as java2d]
    [membrane.ui :as ui]
+   [membrane.basic-components :as basic]
    [membrane.component :as component :refer [defui defeffect]]
    [io.github.dundalek.compost.core :as cc]
    [io.github.dundalek.compost :as cu]
@@ -62,16 +64,9 @@
         (ui/with-color [1 0 0]
           (render-membrane render-ctx-clj shape-clj))))))
 
-(defui compost-svg [_]
+(defui compost-svg [{:keys [viz width height]}]
   (let [width 600
         height 300
-        viz
-        ;[:line [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]]]
-        [:axes "left bottom"
-         [:overlay
-          [[:fill-color "#2CA02C" [:column "Positive" 39]]
-           [:fill-color "#D62728" [:column "Negative" 43]]
-           [:fill-color "#1F77B4" [:column "Neutral" 17]]]]]
         defs-clj (atom [])
         draw-ctx-clj {::cc/definitions defs-clj ::cc/style cc/defstyle}
         render-ctx-clj {}
@@ -83,7 +78,6 @@
                          :width width
                          :height height}]
                   body)]
-    (spit "/home/me/Downloads/y.svg" (str (h/html svg)))
     (skia/svg (.getBytes (str (h/html svg))
                          "utf-8")
               [width height])))
@@ -92,13 +86,35 @@
   (skia/svg (.getBytes (slurp path) "utf-8")))
 
 (defui app [_]
-  (ui/vertical-layout
-   (counter {:num 10})
-   (graph {})
-   (compost-svg {})
-   (svg {:path "/home/me/Downloads/text.svg"})
-   (svg {:path "/home/me/Downloads/text-simple.svg"})
-   (svg {:path "/home/me/Downloads/x.svg"})))
+  (let [body (apply ui/vertical-layout
+                    (->> examples
+                         (mapcat (fn [[label viz]]
+                                   [(ui/label label)
+                                    (compost-svg {:viz viz
+                                                  :width 600
+                                                  :height 300})]))))
+        container-size [800 800]
+
+        body (if container-size
+               (basic/scrollview
+                {:body body
+                 :$body nil
+
+                 :scroll-bounds container-size})
+               body)]
+    body))
+  ; (ui/vertical-layout))
+   ; (counter {:num 10})
+   ; (graph {})
+   ; (compost-svg {:viz [:line [[1 1] [2 4] [3 9] [4 16] [5 25] [6 36]]]})
+   ; (compost-svg {:viz [:axes "left bottom"
+   ;                     [:overlay
+   ;                      [[:fill-color "#2CA02C" [:column "Positive" 39]]
+   ;                       [:fill-color "#D62728" [:column "Negative" 43]]
+   ;                       [:fill-color "#1F77B4" [:column "Neutral" 17]]]]]})))
+   ; (svg {:path "/home/me/Downloads/text.svg"})
+   ; (svg {:path "/home/me/Downloads/text-simple.svg"})
+   ; (svg {:path "/home/me/Downloads/x.svg"})))
 
 (comment
   ;; pop up a window showing our counter with
