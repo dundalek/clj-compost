@@ -102,31 +102,32 @@
 (defui sidebar [_]
   (ui/label "Sidebar placeholder"))
 
-(defui chart-examples [_]
+(defui chart-examples [{:keys [width height]}]
   (let [body (apply ui/vertical-layout
                     (->> examples
                          (mapcat (fn [[label viz]]
                                    [(ui/label label)
                                     (compost-svg {:viz viz
                                                   :width 600
-                                                  :height 300})]))))
-        container-size [800 800]
-
-        body (if container-size
-               (basic/scrollview
-                {:body body
-                 :$body nil
-
-                 :scroll-bounds container-size})
-               body)]
-    body))
+                                                  :height 300})]))))]
+    (basic/scrollview
+     {:body body
+      :$body nil
+      :scroll-bounds [width height]})))
 
 (defui app [_]
-  (ui/horizontal-layout
-   (sidebar {})
-   (chart-examples {})))
+  (let [[cw ch] (:membrane.stretch/container-size context)
+        sidebar-view (sidebar {})
+        ; [sw sh] (ui/bounds sidebar-view)
+        sw (ui/width sidebar-view)
+        chart-width (- cw sw 7) ; 7px for scrollbar
+        chart-height ch]
+    (ui/horizontal-layout
+     sidebar-view
+     (chart-examples {:width chart-width
+                      :height chart-height}))))
 
 (comment
-  (skia/run (component/make-app #'app {})))
-            ; {:include-container-info true
+  (skia/run (component/make-app #'app {})
+            {:include-container-info true}))
             ;  :window-title "Easel"})
