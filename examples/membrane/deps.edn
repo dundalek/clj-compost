@@ -1,4 +1,10 @@
 {:deps
  {com.phronemophobic/membrane {:git/sha "6e5b0473b3efda978e24876f241f30fcae5a5990"
                                :git/url "https://github.com/phronmophobic/membrane"}
+
+  com.phronemophobic.membrane/skialib-linux-x86-64 {:mvn/version "0.16-beta"}
+  com.phronemophobic.membrane/skialib-macosx-aarch64 {:mvn/version "0.16-beta"}
+  com.phronemophobic.membrane/skialib-macosx-x86-64 {:mvn/version "0.16-beta"}
+
+  hiccup/hiccup {:mvn/version "2.0.0-RC5"}
   compost/compost {:local/root "../.."}}}

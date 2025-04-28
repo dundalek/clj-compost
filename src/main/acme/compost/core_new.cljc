@@ -60,14 +60,17 @@
 (declare format-color)
 (declare format-style)
 
+(defn svg-format-number [x]
+  (double x))
+
 (defn svg-format-path [path]
   (->> path
        (map (fn [[tag :as segment]]
               (case tag
                 ::MoveTo (let [[_ [x y]] segment]
-                           (str "M" x " " y " "))
+                           (str "M" (svg-format-number x) " " (svg-format-number y) " "))
                 ::LineTo (let [[_ [x y]] segment]
-                           (str "L" x " " y " ")))))
+                           (str "L" (svg-format-number x) " " (svg-format-number y) " ")))))
        (str/join "")))
 
 (defn render-svg [ctx [tag :as svg]]
@@ -566,7 +569,7 @@
 
 (def defstyle
   {::fill [::Solid [1.0 [::RGB 196 196 196]]]
-   ::stroke-color [1.0 [::RGB 256 0 0]]
+   ::stroke-color [1.0 [::RGB 255 0 0]]
    ::stroke-dash-array []
    ::stroke-width [::Pixels 2]
    ::animation nil
