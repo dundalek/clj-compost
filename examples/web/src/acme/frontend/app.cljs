@@ -11,7 +11,8 @@
    [clojure.walk :as walk]
    [hiccups.runtime :as hr]
    [io.github.dundalek.compost :refer [from-hiccup from-hiccup-crossplatform]]
-   [io.github.dundalek.compost.svg :as csvg]))
+   [io.github.dundalek.compost.svg :as csvg]
+   [io.github.dundalek.compost.canvas :as ccanvas]))
 
 (defn element->hiccup [el]
   (assert (union? el))
@@ -107,7 +108,7 @@
         [[sx-clj sy-clj] shape-clj] (cc/calculate-scales cc/defstyle viz-clj)
         svg-clj (cc/draw-shape draw-ctx-clj 0 0 width height sx-clj sy-clj shape-clj)]
     (js/console.log "svg-clj" svg-clj)
-    (cc/render-canvas ctx svg-clj)))
+    (ccanvas/render-canvas ctx svg-clj)))
 
 (def example-width 500)
 (def example-height 200)
