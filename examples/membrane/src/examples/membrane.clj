@@ -7,6 +7,7 @@
    [membrane.component :as component :refer [defui defeffect]]
    [io.github.dundalek.compost.core :as cc]
    [io.github.dundalek.compost :as cu]
+   [io.github.dundalek.compost.svg :as csvg]
    [membrane.skia :as skia]
    [hiccup2.core :as h]))
 
@@ -73,7 +74,7 @@
         viz-clj (cu/from-hiccup-crossplatform viz)
         [[sx-clj sy-clj] shape-clj] (cc/calculate-scales cc/defstyle viz-clj)
         shape-clj (cc/draw-shape draw-ctx-clj 0 0 width height sx-clj sy-clj shape-clj)
-        body (cc/render-svg render-ctx-clj shape-clj)
+        body (csvg/render-svg render-ctx-clj shape-clj)
         svg (into [:svg {:style "overflow:visible"
                          :width width
                          :height height}]
@@ -136,7 +137,7 @@
         render-ctx-clj {}
         viz-clj (cu/from-hiccup-crossplatform viz)
         shape-clj (cc/draw-shape draw-ctx-clj 0 0 width height sx-clj sy-clj shape-clj)]
-    ;     body (cc/render-svg render-ctx-clj shape-clj)]
+    ;     body (csvg/render-svg render-ctx-clj shape-clj)]
     ; (into [:svg {:style "overflow:visible"
     ;              :width width
     ;              :height height}]

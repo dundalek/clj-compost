@@ -10,7 +10,8 @@
    [clojure.string :as str]
    [clojure.walk :as walk]
    [hiccups.runtime :as hr]
-   [io.github.dundalek.compost :refer [from-hiccup from-hiccup-crossplatform]]))
+   [io.github.dundalek.compost :refer [from-hiccup from-hiccup-crossplatform]]
+   [io.github.dundalek.compost.svg :as csvg]))
 
 (defn element->hiccup [el]
   (assert (union? el))
@@ -88,7 +89,7 @@
         _ (js/console.log "shape-clj" shape-clj)
         _ (js/console.log "svg-clj" svg-clj)
 
-        body (cc/render-svg render-ctx-clj svg-clj)]
+        body (csvg/render-svg render-ctx-clj svg-clj)]
     (into [:svg {:style "overflow:visible"
                  :width width
                  :height height}]
